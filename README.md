@@ -104,18 +104,207 @@ La relación indica que una categoría puede tener muchos productos y una subcat
 
 
 
-## Ejercicio 22
+### Ejercicio 22
 Aqui explicar los scripts que usamos para sacar las tablas de dimensiones, hechos y como las poblamos
-### 22.a
-### 22.b Contestar las siguientes preguntas en SQL.
-**1. ¿Cuántas ventas se realizaron por categoría de producto y mes?**
-<img width="921" height="588" alt="image" src="https://github.com/user-attachments/assets/75323d99-c35f-47d3-8ac9-af3ec306310f" />
-**2. ¿Cuál es el ingreso total (ventas) por cliente y género?**
-<img width="921" height="584" alt="image" src="https://github.com/user-attachments/assets/ed628bab-6cce-4f47-8ca1-8fa265fce8da" />
-**3. ¿Cuál es la cantidad total vendida por producto?**
-<img width="921" height="453" alt="image" src="https://github.com/user-attachments/assets/fef94b9f-7557-4cfd-b890-76fa0180ae82" />
-**4. ¿Cuál fue la cantidad enviada por mes de envío?**
-<img width="921" height="771" alt="image" src="https://github.com/user-attachments/assets/1de1b786-cba2-472c-b095-107cce6d02b4" />
-**5. ¿Cuánto se vendió por tamaño de producto y por estado civil del cliente?**
-<img width="921" height="431" alt="image" src="https://github.com/user-attachments/assets/31bd8afa-5c08-4750-9bba-3da29965cc0c" />
+## 22.a Normalización y Diagrama
+---
+
+## 1. Carga de datos inicial
+
+1. Abrir Excel  
+2. Ir a **Datos → Obtener datos → Desde texto/CSV**  
+3. Seleccionar el archivo: `Tabla_Desnormalizada_Ventas.csv`  
+4. En la ventana de carga:
+   - Seleccionar: **Transformar datos**
+
+<img width="1149" height="863" alt="image" src="https://github.com/user-attachments/assets/c1126112-4aea-480a-8dbb-8f1977bd9df3" />
+
+
+---
+
+## 2. Preparación en Power Query
+
+Una vez dentro del Editor de Power Query:
+
+- Verificar tipos de datos
+- Promover encabezados (si no está hecho)
+
+<img width="1291" height="800" alt="image" src="https://github.com/user-attachments/assets/e93a8bdf-e545-46a2-ba5f-6b8eb701367c" />
+
+
+---
+
+## 3. Creación de tablas del modelo estrella
+
+Se debe duplicar la tabla base para crear:
+
+- DimProduct  
+- DimCustomer  
+- DimDate  
+- DimDateShip  
+- FactSales  
+
+### Duplicar tabla
+1. Clic derecho sobre la consulta
+2. Seleccionar **Duplicar**
+
+<img width="376" height="364" alt="image" src="https://github.com/user-attachments/assets/f9f2b4f9-3929-4615-ba0e-0baaf72f47fd" />
+
+---
+
+## 4. Construcción de DimProduct
+
+### Columnas:
+- ProductKey  
+- Product Code  
+- Product Name  
+- List Price  
+- Color  
+- Size  
+- Category  
+- Subcategory  
+
+### Pasos:
+1. Eliminar columnas innecesarias  
+2. Seleccionar `ProductKey`  
+3. **Inicio → Quitar duplicados**
+
+<img width="914" height="322" alt="image" src="https://github.com/user-attachments/assets/93e0836f-1dce-4ec9-8192-27550d6feac6" />
+
+
+---
+
+## 5. Construcción de DimCustomer
+
+### Columnas:
+- CustomerKey  
+- Birth Date  
+- Marital Status  
+- Gender  
+- Income  
+- Children  
+- Home Owner  
+- Cars  
+
+### Pasos:
+1. Eliminar columnas no relacionadas  
+2. Quitar duplicados por `CustomerKey`
+
+---
+
+## 6. Construcción de DimDate
+
+Ir a: **Agregar columna → Columna personalizada**
+
+- Año:
+    Date.Year([Order Date])
+
+- Mes:
+    Date.Month([Order Date])
+
+- Nombre del mes:
+    Date.MonthName([Order Date])
+
+
+---
+
+## 7. Construcción de DimDateShip
+
+### Columnas:
+- ShipDateKey  
+- Ship Date  
+
+### Columnas adicionales:
+
+- Año:
+    Date.Year([Ship Date])
+
+- Mes:
+    Date.Month([Ship Date])
+
+---
+
+## 8. Construcción de FactSales
+
+### Columnas:
+- OrderNumber  
+- OrderLineNumber  
+- ProductKey  
+- CustomerKey  
+- OrderDateKey  
+- ShipDateKey  
+- Quantity  
+- UnitPrice  
+- ProductCost  
+- SalesAmount  
+
+### Pasos:
+- Eliminar todas las columnas descriptivas  
+- Mantener solo claves y métricas  
+
+---
+
+## 9. Cargar al modelo de datos
+
+Para cada tabla:
+
+1. Clic en **Cerrar y cargar**  
+2. Seleccionar:
+   - Solo crear conexión  
+   - Agregar al modelo de datos  
+
+![Carga al modelo](https://github.com/user-attachments/assets/22bb6f8a-28c5-49b7-a234-eb68c7780f89)
+
+---
+
+## 10. Creación del modelo en Power Pivot
+
+1. Ir a **Power Pivot → Administrar**  
+2. Cambiar a **Vista de diagrama**
+
+---
+
+## 11. Crear relaciones
+
+Arrastrar:
+
+- FactSales[ProductKey] → DimProduct[ProductKey]  
+- FactSales[CustomerKey] → DimCustomer[CustomerKey]  
+- FactSales[OrderDateKey] → DimDate[OrderDateKey]  
+- FactSales[ShipDateKey] → DimDateShip[ShipDateKey]  
+
+---
+
+## 12. Resultado final
+
+El modelo debe tener forma de estrella:
+
+![Modelo estrella](https://github.com/user-attachments/assets/20b86740-0c0c-437c-a532-62157aa1d577)
+
+---
+
+##  22.b Contestar las siguientes preguntas en SQL
+
+### 1. ¿Cuántas ventas se realizaron por categoría de producto y mes?
+![Consulta 1](https://github.com/user-attachments/assets/75323d99-c35f-47d3-8ac9-af3ec306310f)
+
+---
+
+### 2. ¿Cuál es el ingreso total (ventas) por cliente y género?
+![Consulta 2](https://github.com/user-attachments/assets/ed628bab-6cce-4f47-8ca1-8fa265fce8da)
+
+---
+
+### 3. ¿Cuál es la cantidad total vendida por producto?
+![Consulta 3](https://github.com/user-attachments/assets/fef94b9f-7557-4cfd-b890-76fa0180ae82)
+
+---
+
+### 4. ¿Cuál fue la cantidad enviada por mes de envío?
+![Consulta 4](https://github.com/user-attachments/assets/1de1b786-cba2-472c-b095-107cce6d02b4)
+
+---
+
+### 5. ¿Cuánto se vendió por tamaño de producto y por estado civil del cliente?
+![Consulta 5](https://github.com/user-attachments/assets/31bd8afa-5c08-4750-9bba-3da29965cc0c)
 
